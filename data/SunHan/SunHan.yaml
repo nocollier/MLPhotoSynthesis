@@ -1,0 +1,158 @@
+description: "The Physiological Basis for Estimating Photosynthesis from
+Chlorophyll a Fluorescence. Please consult
+[here](https://ecommons.cornell.edu/handle/1813/110978) for more information
+regarding this data. Columns in each source are species, Tleaf (leaf temperature
+in °C), LeafReplicateNumber (replicate number for individual leaf), PARi
+(photosynthetically active radiation in µmol m-2 s-1), CO2R (reference CO2
+concentration in µmol mol-1), Ci (intercellular CO2 concentration in µmol
+mol-1), Anet (net photosynthesis in µmol m-2 s-1), Fm' (maximum chlorophyll a
+fluorescence under light in mV), Fs (steady-state chlorophyll a fluorescence
+under light in mV), VpdL (leaf-to-air vapour pressure deficit in kPa), Press
+(air pressure in kPa), OxygenPress (the pressure of oxygen in kPa), Fo (minimum
+chlorophyll a fluorescence under fully dark-adapted conditions in mV), and Fm
+(maximum chlorophyll a fluorescence under fully dark-adapted conditions in mV)"
+
+sources:
+
+  Andropogon_gerardii:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/Andropogon_gerardii.csv?sequence=4&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  Broadleaf_deciduous_liana_tropical:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/Broadleaf_deciduous_liana_tropical.csv?sequence=5&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  Broadleaf_deciduous_shrub_temperate:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/Broadleaf_deciduous_shrub_temperate.csv?sequence=6&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  Broadleaf_deciduous_tree_boreal:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/Broadleaf_deciduous_tree_boreal.csv?sequence=7&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64' 
+
+  Broadleaf_deciduous_tree_temperate:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/Broadleaf_deciduous_tree_temperate.csv?sequence=8&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+ 
+  Broadleaf_deciduous_tree_tropical:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/Broadleaf_deciduous_tree_tropical.csv?sequence=9&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  Broadleaf_evergreen_tree_tropical:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/Broadleaf_deciduous_tree_tropical.csv?sequence=9&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  C3_Crop:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/C3_Crop.csv?sequence=11&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  C3_Grass:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/C3_Grass.csv?sequence=12&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  C4_Crop:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/C4_Crop.csv?sequence=13&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  C4_Grass:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/C4_Grass.csv?sequence=14&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  Cornus_racemosa_Cuyzam:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/Cornus_racemosa_Cuyzam.csv?sequence=15&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'
+
+  Needleaf_evergreen_tree_boreal:
+    driver: csv
+    args:
+      urlpath: "https://ecommons.cornell.edu/bitstream/handle/1813/110978/Needleaf_evergreen_tree_boreal.csv?sequence=16&isAllowed=y"
+      csv_kwargs:
+        dtype:
+          "Fm'": 'float64'
+          "Fm": 'float64'
+          "Fo": 'float64'
+          "Fs": 'float64'

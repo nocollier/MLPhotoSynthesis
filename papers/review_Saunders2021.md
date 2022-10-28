@@ -90,5 +90,5 @@ Optimized Medlyn correlation: 0.8063589209134864
 
 I am left with the conclusion that the authors have made a few mistakes that have made the Ball-Berry model appear to underperform dramatically. I would not cite this paper in support of machine learning in ecology at this time. While it is possible that I have misunderstood something in their code, the fact that I can independently fit parameters to Ball-Berry and Medlyn with good correlation to the observed leads me to think that I am correct about their mistakes.
 
-Furthermore, this leaves us with a uncomfortable reality: machine learning models can do a good job reproducing even erroneous data. Every single data point added to a collection needs to be carefully thought out and vetted.
+Furthermore, this leaves us with an uncomfortable reality: machine learning models can do a good job reproducing even erroneous data. Every single data point added to a collection needs to be carefully thought out and vetted.
 

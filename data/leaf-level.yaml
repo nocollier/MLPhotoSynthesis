@@ -1,0 +1,102 @@
+description: "A collection of sources which provide leaf-level data for
+photosynthesis."
+
+sources:
+
+  Lin2015:
+    args:
+      csv_kwargs:
+        dtype:
+          PARin: float64
+        encoding: ISO-8859-1
+        na_values: -9999.0
+      urlpath: https://figshare.com/ndownloader/files/1886204
+    description: "This database accompanies the publication 'Lin et al. (2015)
+    Optimal stomatal behaviour around the world. Nature Climate Change, 5,
+    459-464. For details on column definitions and units, please see the
+    [entry](https://figshare.com/articles/dataset/Optimal_stomatal_behaviour_around_the_world/1304289)
+    on figshare." 
+    driver: intake.source.csv.CSVSource 
+    metadata:
+      CO2S:
+        name: CO2 concentration at leaf surface
+        units: ppm
+      Cond:
+        name: Stomatal conductance
+        units: mol m-2 s-1
+      Datacontrib:
+        name: Data contributor
+      Growthcond:
+        name: Growth condition
+      latitude:
+        name: Site latitude
+        units: Decimal degrees
+      Leafspan:
+        options: evergreen, deciduous
+      Location:
+        name: Site description
+      longitude:
+        name: Site longitude
+        units: Decimal degrees
+      opt:
+        name: Growing under ambient or stressed condition
+        options: opt, non-opt
+      PARin:
+        name: Photosynthetically active radiation in cuvette
+        units: umol m-2 s-1
+      Pathway:
+        options: C3, C4, CAM
+      Photo:
+        name: Photosynthetic rate
+        units: umol m-2 s-1
+      Plantform:
+        options: tree, shrub, grass, crop, savanna
+      Species:
+        name: Species name
+      Tleaf:
+        name: Leaf temperature
+        units: degC
+      Tregion:
+        options: arctic, boreal, temperate, tropical
+      Trmmol:
+        name: Leaf transpiration
+        units: mmol m-2 s-1
+      Type:
+        options: gymnosperm, angiosperm
+      VPD:
+        name: Vapour pressure deficit
+        units: kPa
+      Wregion:
+        options: arid, semi-arid, dry sub-humid, humid
+      Wregion2:
+        name: Moisture index
+        units: '1'
+
+  Anderegg2018:
+    args:
+      csv_kwargs:
+        dtype:
+          PARin: float64
+          Comments: str
+          OriginalFile: str
+        na_values: -9999.0
+      urlpath: https://figshare.com/ndownloader/files/10920236
+    description: "This database accompanies the publication 'Anderegg, et al.
+    (2018) Woody plants optimise stomatal behaviour relative to hydraulic risk.
+    Ecology Letters. For more details, please see the
+    [entry](https://figshare.com/articles/dataset/AllData_EcologyLetters_Figshare_v1_3-18_csv/6066449/1)
+    on figshare." 
+    driver: intake.source.csv.CSVSource
+    metadata: {}
+
+  Saunders2021:
+    args:
+      urlpath: https://github.com/altazietsman/ML-stomatal-conductance-models/blob/master/Input%20Data/df.xlsx?raw=true
+    description: "This dataset, along with Anderegg2018, was used in the
+    publication 'Saunders, et al. (2021) Machine learning models perform better
+    than traditional empirical models for stomatal conductance when applied to
+    multiple tree species across different forest biomes'. See their github
+    [repository](https://github.com/altazietsman/ML-stomatal-conductance-models)
+    for more details."
+    driver: intake_excel.intake_excel.ExcelSource
+    metadata: {}

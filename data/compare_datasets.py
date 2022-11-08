@@ -1,0 +1,30 @@
+"""This script uses the intake catalog to loop through and compute pairplot
+diagrams for all the numerical columns of the datasets found."""
+
+import intake
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+
+cat = intake.open_catalog(
+    "https://raw.githubusercontent.com/nocollier/MLPhotoSynthesis/main/data/leaf-level.yaml"
+)
+
+for key in cat:
+    src = cat[key]
+    if not src.is_persisted:
+        src.persist()
+    df = src.read()
+    for col in df.columns:
+        if df[col].isna().all():
+            df.pop(col)
+    if "latitude" in df.columns:
+        df = df.drop(columns=["latitude"])
+    if "longitude" in df.columns:
+        df = df.drop(columns=["longitude"])
+    sns.pairplot(
+        df.select_dtypes(include=np.number),
+        diag_kind="kde",
+    )
+    plt.savefig(f"{key}.png")
+    plt.close()

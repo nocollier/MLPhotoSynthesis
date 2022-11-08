@@ -1,5 +1,6 @@
 """This script uses the intake catalog to loop through and compute pairplot
 diagrams for all the numerical columns of the datasets found."""
+import os
 
 import intake
 import matplotlib.pyplot as plt
@@ -11,6 +12,10 @@ cat = intake.open_catalog(
 )
 
 for key in cat:
+    if os.path.isfile(f"{key}.png"):
+        print(f"Image already exists for {key}")
+        continue
+    print(f"Processing {key}...")
     src = cat[key]
     if not src.is_persisted:
         src.persist()

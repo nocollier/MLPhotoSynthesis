@@ -45,6 +45,9 @@ def add_relative_humidity(
         df0[rh_col] = df0[rh_col].fillna(relh)
     else:
         df0[rh_col] = relh
+    if "notes" not in df0.attrs:
+        df0.attrs["notes"] = []
+    df0.attrs["notes"].append(f"Added relative humidity '{rh_col}' using an equation")
     return df0
 
 
@@ -81,6 +84,8 @@ def add_cond_ballberry(
     def _residual(gss, photo, relh, cond, cal):
         return np.linalg.norm(_condbb(gss[0], gss[1], photo, relh, cal) - cond)
 
+    if "notes" not in df0.attrs:
+        df0.attrs["notes"] = []
     if gs0 is None or gs1 is None:
         assert cond_col in df0
         out = minimize(
@@ -96,9 +101,15 @@ def add_cond_ballberry(
         df0[f"{cond_col}_bb_opt"] = _condbb(
             out.x[0], out.x[1], df0[photo_col], df0[rh_col], df0[ca_col]
         )
+        df0.attrs["notes"].append(
+            f"Added optimized Ball-Berry model '{cond_col}_bb_opt' using gs0={out.x[0]} and gs1={out.x[1]}"
+        )
     else:
         df0[f"{cond_col}_bb"] = _condbb(
             gs0, gs1, df0[photo_col], df0[rh_col], df0[ca_col]
+        )
+        df0.attrs["notes"].append(
+            f"Added Ball-Berry model '{cond_col}_bb' using {gs0=} and {gs1=}"
         )
     return df0
 
@@ -136,6 +147,8 @@ def add_cond_medlyn(
     def _residual(gss, vpd, photo, cal, cond):
         return np.linalg.norm(_condm(gss[0], gss[1], vpd, photo, cal) - cond)
 
+    if "notes" not in df0.attrs:
+        df0.attrs["notes"] = []
     if gs0 is None or gs1 is None:
         assert cond_col in df0
         out = minimize(
@@ -151,9 +164,15 @@ def add_cond_medlyn(
         df0[f"{cond_col}_m_opt"] = _condm(
             out.x[0], out.x[1], df0[vpd_col], df0[photo_col], df0[ca_col]
         )
+        df0.attrs["notes"].append(
+            f"Added optimized Medlyn model '{cond_col}_m_opt' using gs0={out.x[0]} and gs1={out.x[1]}"
+        )
     else:
         df0[f"{cond_col}_m"] = _condm(
             gs0, gs1, df0[vpd_col], df0[photo_col], df0[ca_col]
+        )
+        df0.attrs["notes"].append(
+            f"Added Medlyn model '{cond_col}_bb' using {gs0=} and {gs1=}"
         )
     return df0
 

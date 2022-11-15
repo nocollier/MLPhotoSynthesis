@@ -1,21 +1,27 @@
 """Routines for testing performance of stomatal conductance models on data.
 """
 
-from typing import Union
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
 
-def remove_outliers(df0: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
+def remove_outliers(
+    df0: pd.DataFrame, columns: List = None, verbose: bool = False
+) -> pd.DataFrame:
     """Removes rows where any column has data greater than 3 standard deviations
-    from the mean."""
-    dfr = df0[((np.abs(df0 - df0.mean()) / df0.std()) < 3).all(axis=1)]
-    nrm = len(df0) - len(dfr)
+    from the mean. If 'columns' are specified, only include these in the
+    calculation."""
+    df_include = df0 if columns is None else df0[columns]
+    df_reduced = df0[
+        ((np.abs(df_include - df_include.mean()) / df_include.std()) < 3).all(axis=1)
+    ]
+    nrm = len(df0) - len(df_reduced)
     if verbose:
         print(f"Removed {nrm} rows ({100*nrm/len(df0):.1f}%) marked as outliers.")
-    return dfr
+    return df_reduced
 
 
 def add_relative_humidity(
@@ -52,12 +58,22 @@ def add_cond_ballberry(
     gs1: Union[None, float],
     verbose: bool = False,
 ) -> pd.DataFrame:
-    """Add the BallBerry model of stomatal conductance to the dataframe. If gs0
-    or gs1 are specified as None and cond_col is given, then this routine will
-    compute the optimal parameters. If gs0 and gs1 are given, then we will
-    simply add the model result for those parameters. Model expects
-    photosynthesis [umol m-2 s-1], relative humidity [%], and optionally a
-    stomatal conductance [mol m-2 s-1]"""
+    """Add the Ball-Berry model of stomatal conductance to the dataframe.
+
+    Given the column names for
+
+    * photosynthesis (photo_col) [umol m-2 s-1],
+    * relative humidity (rh_col) [%], and
+    * the CO2 concentration at the leaf surface (ca_col) [ppm]
+
+    compute the stomatal conductance (cond_col) [mol m-2 s-1] by the Ball-Berry
+    model using the input parameters gs0 [mol m-2 s-1] and gs1 [%-1]. The model
+    will be added to the dataframe in a column labeled cond_col with '_bb'
+    postpended. If the constants gs0 and gs1 are given as None and cond_col is
+    already in the dataframe, then we will compute optimal parameters and add
+    the result to the dataframe with the column name cond_col with '_bb_opt'
+    postpended.
+    """
 
     def _condbb(gs0, gs1, photo, relh, cal):
         return gs0 + gs1 * photo * (0.01 * relh) / cal
@@ -69,7 +85,7 @@ def add_cond_ballberry(
         assert cond_col in df0
         out = minimize(
             _residual,
-            [0.0, 15.0],
+            [0.0, 15.0],  # use typical values as an initial guess
             (df0[photo_col], df0[rh_col], df0[cond_col], df0[ca_col]),
         )
         if not out.success:
@@ -93,92 +109,148 @@ def add_cond_medlyn(
     photo_col: str,
     ca_col: str,
     cond_col: str,
+    gs0: Union[None, float],
     gs1: Union[None, float],
     verbose: bool = False,
 ) -> pd.DataFrame:
-    """."""
+    """Add the Medlyn model of stomatal conductance to the dataframe.
 
-    def _condm(gs1, vpd, photo, cal):
-        return 1.6 * (1 + gs1 / np.sqrt(vpd)) * photo / cal
+    Given the column names for
+
+    * leaf boundary layer vapor pressure deficit (vpd_col) [kPa],
+    * photosynthesis (photo_col) [umol m-2 s-1], and
+    * the CO2 concentration at the leaf surface (ca_col) [ppm]
+
+    compute the stomatal conductance (cond_col) [mol m-2 s-1] by the Medlyn
+    model using the input parameters gs0 [mol m-2 s-1] and gs1 [1]. The model
+    will be added to the dataframe in a column labeled cond_col with '_m'
+    postpended. If the constants gs0 and gs1 are given as None and cond_col is
+    already in the dataframe, then we will compute optimal parameters and add
+    the result to the dataframe with the column name cond_col with '_m_opt'
+    postpended.
+    """
+
+    def _condm(gs0, gs1, vpd, photo, cal):
+        return gs0 + 1.6 * (1 + gs1 / np.sqrt(vpd)) * photo / cal
 
     def _residual(gss, vpd, photo, cal, cond):
-        return np.linalg.norm(_condm(gss[0], vpd, photo, cal) - cond)
+        return np.linalg.norm(_condm(gss[0], gss[1], vpd, photo, cal) - cond)
 
-    if gs1 is None:
+    if gs0 is None or gs1 is None:
         assert cond_col in df0
         out = minimize(
             _residual,
-            [10.0],
+            [0, 10.0],
             (df0[vpd_col], df0[photo_col], df0[ca_col], df0[cond_col]),
         )
         if not out.success:
             print(out)
             raise RuntimeError("Optimization of Medlyn parameters failed.")
         if verbose:
-            print(f"Optimized Medlyn parameter: gs1 = {out.x[0]}")
+            print(f"Optimized Medlyn parameter: gs0 = {out.x[0]} gs1 = {out.x[1]}")
         df0[f"{cond_col}_m_opt"] = _condm(
-            out.x[0], df0[vpd_col], df0[photo_col], df0[ca_col]
+            out.x[0], out.x[1], df0[vpd_col], df0[photo_col], df0[ca_col]
         )
     else:
-        df0[f"{cond_col}_bb"] = _condm(gs1, df0[vpd_col], df0[photo_col], df0[ca_col])
+        df0[f"{cond_col}_m"] = _condm(
+            gs0, gs1, df0[vpd_col], df0[photo_col], df0[ca_col]
+        )
     return df0
 
 
-print("\n----------------- Lin2015 ------------------")
-df1 = pd.read_csv(
-    "./data/Lin2015/WUEdatabase_merged_Lin_et_al_2015_NCC.csv", encoding="ISO-8859-1"
-)
-df1 = df1.replace(-9999, np.nan)
-df1 = df1[["Photo", "Cond", "Tleaf", "VPD", "CO2S"]].dropna()
-df1 = remove_outliers(df1, verbose=True)
-print("Relative humidity computed from a model")
-df1 = add_relative_humidity(
-    df1, temperature_col="Tleaf", vpd_col="VPD", rh_col="RH"  # Dataset has no Tair
-)
-df1 = add_cond_ballberry(df1, "Photo", "RH", "CO2S", "Cond", None, None, verbose=True)
-df1 = add_cond_medlyn(df1, "VPD", "Photo", "CO2S", "Cond", None, verbose=True)
-print(df1.describe())
-print(
-    "Optimized BallBerry correlation:",
-    np.corrcoef(df1["Cond"], df1["Cond_bb_opt"])[0, 1],
-)
-print(
-    "Optimized Medlyn correlation:",
-    np.corrcoef(df1["Cond"], df1["Cond_m_opt"])[0, 1],
-)
+def _quadratic(a, b, c):
+    """Solve a quadratic of the form a x^2 + b x + c = 0"""
+    assert (4 * a * c) <= (b**2)
+    tmp = np.sqrt(b**2 - 4 * a * c)
+    return (-b + tmp) / (2 * a), (-b - tmp) / (2 * a)
 
-print("\n---------------- Anderegg2018 ------------------")
-df2 = pd.read_csv("./data/Anderegg2018/AllData_EcologyLetters_Figshare_v1_318.csv")
-df2 = df2.replace(-9999, np.nan)
-df2 = df2[["Photo", "Cond", "Tair", "VPD", "RH", "CO2S"]].dropna()
-df2 = remove_outliers(df2, verbose=True)
-df2 = add_cond_ballberry(df2, "Photo", "RH", "CO2S", "Cond", None, None, verbose=True)
-df2 = add_cond_medlyn(df2, "VPD", "Photo", "CO2S", "Cond", None, verbose=True)
-print(df2.describe())
-print(
-    "Optimized BallBerry correlation:",
-    np.corrcoef(df2["Cond"], df2["Cond_bb_opt"])[0, 1],
-)
-print(
-    "Optimized Medlyn correlation:",
-    np.corrcoef(df2["Cond"], df2["Cond_m_opt"])[0, 1],
-)
 
-print("\n---------------- Saunders ------------------")
-print("Photosynthesis added by Farquhar model")
-print("Assumed leaf CO2 concentration of 40 ppm as per author script")
-df3 = pd.read_pickle("./data/Sauders/Sauders_processed.pkl")
-df3 = df3[["Photo", "Cond", "Tair", "VPD", "RH"]].dropna()
-df3 = remove_outliers(df3, verbose=True)
-df3["ca"] = 40.0  # dataset lacks CO2S and this was constant used in their code
-df3 = add_cond_ballberry(df3, "Photo", "RH", "ca", "Cond", None, None, verbose=True)
-df3 = add_cond_medlyn(df3, "VPD", "Photo", "ca", "Cond", None, verbose=True)
-print(df3.describe())
-print(
-    "Optimized BallBerry correlation:",
-    np.corrcoef(df3["Cond"], df3["Cond_bb_opt"])[0, 1],
-)
-print(
-    "Optimized Medlyn correlation:",
-    np.corrcoef(df3["Cond"], df3["Cond_m_opt"])[0, 1],
-)
+# pylint: disable=invalid-name
+def apply_photosynthesis_farquhar(row, Vcmax25=42.0, Jmax25=65.0):
+    """
+    https://escomp.github.io/ctsm-docs/versions/release-clm5.0/html/tech_note/Photosynthesis/CLM50_Tech_Note_Photosynthesis.html
+
+    * I have only used expressions from the C3 pathway, do we need to
+      distinguish? Is our data that specific (Lin2015 does have C3/C4)?
+        - C4 equations didn't work out, Aj was always 2 orders of magnitude
+          smaller than the other rates, feels like I am doing something wrong.
+    * In computing Aj and Ac (2.9.3 & 2.9.4) I have interpretted the ci >= Gamma
+      as max(ci-Gamma,0). This means that if ci < Gamma, the net photosynthesis
+      will be the respiration with a negative sign.
+    * The nonlinear solver fails 85% of the time. I have tried different
+      solvers, but the Hessian is not SPD. I could use PETSc SNES, but it may be
+      that the solver complains because of the min statement in the residual.
+      Try the smoothing mentioned in the MAAT paper.
+        - Adding in the Jacobian kills convergence. Not sure why.
+        - Smoothing doesn't help.
+        - minimize is reporting success=False most of the time, but the the
+          function is being reduced 8 to 11 orders of magnitude which is more
+          than ample.
+    """
+    # Constants
+    Rgas = 8.31446  # [J mol-1 K-1]
+    Tref = 25 + 273.15  # [K]
+    Patm = 101325.0  # [Pa]
+    oi = 0.2 * Patm  # [Pa]
+    Kc25 = 404.9e-6 * Patm  # [Pa]
+    Ko25 = 278.4e-3 * Patm  # [Pa]
+    Gamma25 = 42.75e-6 * Patm  # CO2 compensation point [Pa]
+    # Vcmax25 = 42  # ??? [umol m-2 s-1], Nate found 35, Elias' default 60
+    # Jmax25 = 65  # ??? [umol m-2 s-1]
+    Rd25 = 0.015 * Vcmax25
+
+    # Variables that are coming from the data
+    if row[["Tleaf", "CO2S", "PARin", "Cond"]].isna().any():
+        return np.nan
+    Tleaf = row["Tleaf"] + 273.15  # [degC] to [K]
+    cs = row["CO2S"] * 1e-6 * Patm  # [ppm] to [Pa] CO2 partial pressure at leaf
+    phi = row["PARin"]  # [umol m-2 s-1] photosynthetically active radiation
+    gs = row["Cond"]  # [mol m-2 s-1] stomatal conductance
+
+    # Temperature scaling, constants found in Table 2.9.2. The additional
+    # scaling for Vcmax, Jmax, and Rd involve a 10-day mean temperature which we
+    # do not have for this data.
+    def _temperature_scaling(Tv, Ha):
+        """Tv [K], Ha [J mol-1]"""
+        return np.exp(Ha / (Tref * Rgas) * (1 - Tref / Tv))
+
+    Vcmax = Vcmax25 * _temperature_scaling(Tleaf, 72000)
+    Jmax = Jmax25 * _temperature_scaling(Tleaf, 50000)
+    Rd = Rd25 * _temperature_scaling(Tleaf, 46390)
+    Kc = Kc25 * _temperature_scaling(Tleaf, 79430)
+    Ko = Ko25 * _temperature_scaling(Tleaf, 36380)
+    Gamma = Gamma25 * _temperature_scaling(Tleaf, 37830)
+
+    # Solve (2.9.6) for electron transport rate
+    Theta_PSII = 0.7
+    Phi_PSII = 0.85
+    I_PSII = 0.5 * Phi_PSII * phi
+    Jx = min(*_quadratic(Theta_PSII, -(I_PSII + Jmax), I_PSII * Jmax))  # [umol m-2 s-1]
+
+    # Solve simultanesouly for (ci, An)
+    def _jacobian(x):
+        ci = x[0]
+        An = x[1]
+        Aj = Jx * max(ci - Gamma, 0) / (4 * ci + 8 * Gamma)  # (2.9.4)
+        Ac = Vcmax * max(ci - Gamma, 0) / (ci + Kc * (1 + oi / Ko))  # (2.9.3)
+        Ap = 0.5 * Vcmax  # (2.9.5)
+        res = [
+            An - ((cs - ci) / (1.6 * Patm * 1e-6) * gs),  # (2.9.19)
+            An - (min(Aj, Ac, Ap) - Rd),  # (2.9.2)
+        ]
+        return res
+
+    def _function(x):
+        return np.linalg.norm(_jacobian(x))
+
+    out = minimize(
+        _function,
+        [cs, 10.0],
+    )
+
+    # if we do not reduce the function by at least 6 orders of magnitude, return
+    # nan
+    if np.log10(_function([cs, 10.0]) / out.fun) < 6:
+        return np.nan
+
+    return out.x[1]

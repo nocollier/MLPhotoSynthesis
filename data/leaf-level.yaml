@@ -44,12 +44,12 @@ sources:
         options: opt, non-opt
       PARin:
         name: Photosynthetically active radiation in cuvette
-        units: umol m-2 s-1
+        units: 1e-6 mol m-2 s-1
       Pathway:
         options: C3, C4, CAM
       Photo:
         name: Photosynthetic rate
-        units: umol m-2 s-1
+        units: 1e-6 mol m-2 s-1
       Plantform:
         options: tree, shrub, grass, crop, savanna
       Species:
@@ -61,7 +61,7 @@ sources:
         options: arctic, boreal, temperate, tropical
       Trmmol:
         name: Leaf transpiration
-        units: mmol m-2 s-1
+        units: 1e-3 mol m-2 s-1
       Type:
         options: gymnosperm, angiosperm
       VPD:
@@ -86,9 +86,130 @@ sources:
     (2018) Woody plants optimise stomatal behaviour relative to hydraulic risk.
     Ecology Letters. For more details, please see the
     [entry](https://figshare.com/articles/dataset/AllData_EcologyLetters_Figshare_v1_3-18_csv/6066449/1)
-    on figshare." 
+    on figshare. As per a private communication, the data columns were selected
+    to match the meaning and units of the Lin2015 data and are replicated here
+    in the metadata. However, some columns in this dataset are not found in the
+    version of Lin2015 we point to here. In this case we have provided a guess
+    at meanings and units based on orders of magnitude." 
     driver: intake.source.csv.CSVSource
-    metadata: {}
+    metadata:
+      BLCond:
+        note: not used, all NaN's
+      canopyposition:
+        options: top, Top, None
+      Ci:
+        name: CO2 concentration inside the leaf
+        units: ppm
+      CO2S:
+        name: CO2 concentration at leaf surface
+        units: ppm
+      Comments:
+        name: Measurement comments
+      Cond:
+        name: Stomatal conductance
+        units: mol m-2 s-1
+      Datacontrib:
+        name: Data contributor
+      Date:
+        name: Date collected
+      fitgroup:
+        name: Measurement comments
+      Funtype:
+        options: temperate evergreen, Temperate conifer, Temperate evergreen, None
+      GrowthCa:
+        options: ambient, Ambient, None
+      Growthcond:
+        name: Growth condition
+      GrowthTair:
+        options: ambient, None
+      Instrument:
+        options: Licor 6400(2cm_ Fluo), Licor 6400, None
+      LAI:
+        name: Leaf area index
+        options: 1.2, 1.9, 2.8
+      latitude:
+        name: Site latitude
+        units: degrees_north
+      Leafspan:
+        options: evergreen, deciduous
+      LightSource:
+        name: not used, all Nan's
+      Location:
+        name: Site description
+      longitude:
+        name: Site longitude
+        units: degrees_east
+      LWP:
+        name: Leaf Water Potential
+        units: MPa
+      LWPpredawn:
+        name: Predawn Leaf Water Potential
+        units: MPa
+      opt:
+        name: Growing under ambient or stressed condition, or reference of data
+        options: opt, Feeney et al. 1998, Kolb & Stone 2000, Koepke & Kolb 2013, Xu & Baldochhi 2003, Chmura et al. 2016, Anderegg 2011, Resco et al. 2009, Arango-Velez et al. 2011, Choat 2006, Wolfe et al. 2016, Li et al. 2015, Sherman et al. 2004, Meinzer et al. 2004
+      OriginalFile:
+        options: deAngelis macchia species.xls, None
+      PARin:
+        name: Photosynthetically active radiation in cuvette
+        units: 1e-6 mol m-2 s-1
+      Pathway:
+        options: C3, C4, CAM
+      Patm:
+        name: Atmospheric pressure
+        units: kPa
+      Photo:
+        name: Photosynthetic rate
+        units: 1e-6 mol m-2 s-1
+      Plantform:
+        options: tree, shrub, grass, crop, savanna
+      Reference:
+        name: Reference of the data, note some of this information is in 'opt'
+        options: Martin-StPaul et al 2012, Limousin et al. 2013 PCE, None
+      RH:
+        name: Relative humidity
+        units: '%'
+      sampleheight:
+        name: not used, all NaN's
+      Season:
+        name: not used, all NaN's
+      Species:
+        name: Species name
+      SWC:
+        name: Soil water content
+        units: '?'
+      SWP:
+        name: not used, all NaN's
+      Tair:
+        name: Air temperature
+        units: degC
+      Time:
+        name: Measurement time
+      Tleaf:
+        name: Leaf temperature
+        units: degC
+      Totalheight:
+        name: '?'
+        options: 5.8 , 4.15, 3.15,  nan
+      Treatment:
+        options: Ambient, Dry site of Gradient, Intermediate site of the gradient, Irrigation, OTC CO2_amb, Wet site of the Gradient, None
+      Tregion:
+        options: arctic, boreal, temperate, tropical
+      Trmmol:
+        name: Leaf transpiration
+        units: 1e-3 mol m-2 s-1
+      Type:
+        options: gymnosperm, angiosperm, None
+      VPD:
+        name: Vapour pressure deficit
+        units: kPa
+      Wregion:
+        options: arid, semi-arid, dry sub-humid, humid
+      Wregion2:
+        name: Moisture index
+        units: '1'
+        note: the order of magnitude of this data added in from other sources (see the 'opt' column) is 2x greater
+
 
   Saunders2021:
     args:

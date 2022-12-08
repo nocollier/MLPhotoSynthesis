@@ -9,14 +9,16 @@ from scipy.optimize import minimize
 
 
 def remove_outliers(
-    df0: pd.DataFrame, columns: List = None, verbose: bool = False
+    df0: pd.DataFrame, columns: List = None, verbose: bool = False, outlier: float = 3.0
 ) -> pd.DataFrame:
     """Removes rows where any column has data greater than 3 standard deviations
     from the mean. If 'columns' are specified, only include these in the
     calculation."""
     df_include = df0 if columns is None else df0[columns]
     df_reduced = df0[
-        ((np.abs(df_include - df_include.mean()) / df_include.std()) < 3).all(axis=1)
+        ((np.abs(df_include - df_include.mean()) / df_include.std()) < outlier).all(
+            axis=1
+        )
     ]
     nrm = len(df0) - len(df_reduced)
     if verbose:
@@ -101,6 +103,7 @@ def add_cond_ballberry(
         df0[f"{cond_col}_bb_opt"] = _condbb(
             out.x[0], out.x[1], df0[photo_col], df0[rh_col], df0[ca_col]
         )
+        df0.attrs["Ball-Berry"] = {"gs0": out.x[0], "gs1": out.x[1]}
         df0.attrs["notes"].append(
             f"Added optimized Ball-Berry model '{cond_col}_bb_opt' using gs0={out.x[0]} and gs1={out.x[1]}"
         )
@@ -177,6 +180,7 @@ def add_cond_medlyn(
     return df0
 
 
+# pylint: disable=invalid-name
 def _quadratic(a, b, c):
     """Solve a quadratic of the form a x^2 + b x + c = 0"""
     assert (4 * a * c) <= (b**2)
@@ -184,7 +188,6 @@ def _quadratic(a, b, c):
     return (-b + tmp) / (2 * a), (-b - tmp) / (2 * a)
 
 
-# pylint: disable=invalid-name
 def apply_photosynthesis_farquhar(row, Vcmax25=42.0, Jmax25=65.0):
     """
     https://escomp.github.io/ctsm-docs/versions/release-clm5.0/html/tech_note/Photosynthesis/CLM50_Tech_Note_Photosynthesis.html

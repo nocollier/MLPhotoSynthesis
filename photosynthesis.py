@@ -1,7 +1,7 @@
 """Routines for testing performance of stomatal conductance models on data.
 """
 
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -24,6 +24,13 @@ def remove_outliers(
     if verbose:
         print(f"Removed {nrm} rows ({100*nrm/len(df0):.1f}%) marked as outliers.")
     return df_reduced
+
+
+def create_latin_hypercube(dfin: pd.DataFrame, n1d: int) -> Tuple[np.array]:
+    """."""
+    dfs = dfin.describe().transpose()
+    arrays = [np.linspace(row["25%"], row["75%"], n1d) for _, row in dfs.iterrows()]
+    return np.meshgrid(*arrays)
 
 
 def add_relative_humidity(
@@ -167,6 +174,7 @@ def add_cond_medlyn(
         df0[f"{cond_col}_m_opt"] = _condm(
             out.x[0], out.x[1], df0[vpd_col], df0[photo_col], df0[ca_col]
         )
+        df0.attrs["Medlyn"] = {"gs0": out.x[0], "gs1": out.x[1]}
         df0.attrs["notes"].append(
             f"Added optimized Medlyn model '{cond_col}_m_opt' using gs0={out.x[0]} and gs1={out.x[1]}"
         )

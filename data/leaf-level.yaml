@@ -282,16 +282,16 @@ sources:
         units: '1'
       PARi: 
         name: photosynthetically active radiation
-        units: umol m-2 s-1
+        units: 1e-6 mol m-2 s-1
       CO2R: 
         name: reference CO2 concentration
-        units: umol mol-1
+        units: 1e-6 mol mol-1
       Ci:
         name: intercellular CO2 concentration
-        units: umol mol-1
+        units: 1e-6 mol mol-1
       Anet: 
         name: net photosynthesis
-        units: umol m-2 s-1
+        units: 1e-6 mol m-2 s-1
       Fm': 
         name: maximum chlorophyll a fluorescence under light
         units: mV

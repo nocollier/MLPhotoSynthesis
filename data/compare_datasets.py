@@ -18,6 +18,7 @@ for key in cat:
     print(f"Processing {key}...")
     src = cat[key]
     if not src.is_persisted:
+        print("  Persisting data...")
         src.persist()
     df = src.read()
     for col in df.columns:

@@ -22,11 +22,29 @@ df = ph.remove_outliers(
     columns=["Wregion2", "CO2S", "Trmmol", "PARin", "Tleaf", "Photo", "VPD"],
     verbose=True,
 )
-# df = ph.add_relative_humidity(df, temperature_col="Tleaf", vpd_col="VPD", rh_col="RH")
+df = ph.add_relative_humidity(df, temperature_col="Tleaf", vpd_col="VPD", rh_col="RH")
 df_train, df_test = train_test_split(df, train_size=0.8, random_state=12082022)
 
-# Compute optimal Ball-Berry parameters based on the training data, and then use
+# Compute optimal Ball-Berry/Medlyn parameters based on the training data, and then use
 # the coefficients to apply the model to the test data.
+df_train = ph.add_cond_ballberry(
+    df_train,
+    photo_col="Photo",
+    rh_col="RH",
+    ca_col="CO2S",
+    cond_col="Cond",
+    gs0=None,
+    gs1=None,
+)
+df_test = ph.add_cond_ballberry(
+    df_test,
+    photo_col="Photo",
+    rh_col="RH",
+    ca_col="CO2S",
+    cond_col="Cond",
+    gs0=df_train.attrs["Ball-Berry"]["gs0"],
+    gs1=df_train.attrs["Ball-Berry"]["gs1"],
+)
 df_train = ph.add_cond_medlyn(
     df_train,
     photo_col="Photo",
@@ -45,21 +63,40 @@ df_test = ph.add_cond_medlyn(
     gs0=df_train.attrs["Medlyn"]["gs0"],
     gs1=df_train.attrs["Medlyn"]["gs1"],
 )
+bb_score = r2_score(df_test["Cond"], df_test["Cond_bb"])
 m_score = r2_score(df_test["Cond"], df_test["Cond_m"])
 
-# Now we do the same with random forests.
+# Now we do the same with random forests, one uses just the columns also in the
+# Medlyn model, the other uses all the nyumerical columns we have.
 cols = ["Wregion2", "CO2S", "Trmmol", "PARin", "Tleaf", "Photo", "VPD"]
-regr = RandomForestRegressor().fit(df_train[cols], df_train["Cond"])
-df_test["Cond_rf"] = regr.predict(df_test[cols])
+cols_m = ["CO2S", "Photo", "VPD"]
+
+regr_m = RandomForestRegressor().fit(df_train[cols_m], df_train["Cond"])
+df_test["Cond_rf_m"] = regr_m.predict(df_test[cols_m])
+rf_m_score = r2_score(df_test["Cond"], df_test["Cond_rf_m"])
+
+regr_all = RandomForestRegressor().fit(df_train[cols], df_train["Cond"])
+df_test["Cond_rf"] = regr_all.predict(df_test[cols])
 rf_score = r2_score(df_test["Cond"], df_test["Cond_rf"])
+
+dfi = pd.DataFrame(
+    {
+        "features": regr_all.feature_names_in_,
+        "importance": regr_all.feature_importances_,
+    }
+)
+print(dfi.sort_values("importance", ascending=False))
 
 # Plot a comparison of each method with respect to the measured data.
 plt.rcParams.update({"font.size": 16})
-fig, axs = plt.subplots(ncols=2, figsize=(14, 6.5))
+fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(14, 14), tight_layout=True)
+fig.subplots_adjust(hspace=0.125, wspace=0.125)
 sns.despine(fig, left=True, bottom=True)
-cmax = df_test[["Cond", "Cond_m", "Cond_rf"]].to_numpy().max()
+cmax = df_test[[c for c in df.columns if c.startswith("Cond")]].to_numpy().max()
 pad = 0.05 * cmax
-for i, col in enumerate(["Cond_m", "Cond_rf"]):
+for ind, col in enumerate(["Cond_bb", "Cond_m", "Cond_rf_m", "Cond_rf"]):
+    i = int(ind / 2)
+    j = ind % 2
     sns.scatterplot(
         x="Cond",
         y=col,
@@ -67,15 +104,17 @@ for i, col in enumerate(["Cond_m", "Cond_rf"]):
         hue_order=df_test["Photo"].quantile([0.05, 0.25, 0.5, 0.75, 0.95]),
         linewidth=0,
         data=df_test,
-        ax=axs[i],
-        legend="auto" if i == 1 else False,
+        ax=axs[i, j],
+        legend="auto" if ind == 0 else False,
     )
-    axs[i].set_xticks(np.linspace(0, 1.25, 6))
-    axs[i].set_yticks(np.linspace(0, 1.25, 6))
-    axs[i].set_xlim(-pad, cmax + pad)
-    axs[i].set_ylim(-pad, cmax + pad)
-axs[0].set_title(f"Medlyn, $R^2$ = {m_score:.3f}")
-axs[1].set_title(f"Random Forest, $R^2$ = {rf_score:.3f}")
+    axs[i, j].set_xticks(np.linspace(0, 1.25, 6))
+    axs[i, j].set_yticks(np.linspace(0, 1.25, 6))
+    axs[i, j].set_xlim(-pad, cmax + pad)
+    axs[i, j].set_ylim(-pad, cmax + pad)
+axs[0, 0].set_title(f"Ball-Berry, $R^2$ = {bb_score:.3f}")
+axs[0, 1].set_title(f"Medlyn, $R^2$ = {m_score:.3f}")
+axs[1, 0].set_title(f"Random Forest (Medlyn), $R^2$ = {rf_m_score:.3f}")
+axs[1, 1].set_title(f"Random Forest, $R^2$ = {rf_score:.3f}")
 fig.savefig("ml_win.png")
 plt.close()
 
@@ -89,7 +128,7 @@ for col in cols:
     if col in pcols:
         continue
     dflhc[col] = float(df[col].mean())
-dflhc["Cond_rf"] = regr.predict(dflhc[cols])
+dflhc["Cond_rf"] = regr_all.predict(dflhc[cols])
 dflhc = ph.add_cond_medlyn(
     dflhc,
     photo_col="Photo",
@@ -107,15 +146,15 @@ axs = subfigs.subplots(1, 2, sharey=True)
 vmin = min(dflhc["Cond_m"].min(), dflhc["Cond_rf"].min())
 vmax = max(dflhc["Cond_m"].max(), dflhc["Cond_rf"].max())
 qax = axs[0].pcolormesh(
-    dflhc["Photo"].to_numpy().reshape((N1D, N1D)),
-    dflhc["VPD"].to_numpy().reshape((N1D, N1D)),
+    dflhc[pcols[0]].to_numpy().reshape((N1D, N1D)),
+    dflhc[pcols[1]].to_numpy().reshape((N1D, N1D)),
     dflhc["Cond_m"].to_numpy().reshape((N1D, N1D)),
     vmin=vmin,
     vmax=vmax,
 )
 pax = axs[1].pcolormesh(
-    dflhc["Photo"].to_numpy().reshape((N1D, N1D)),
-    dflhc["VPD"].to_numpy().reshape((N1D, N1D)),
+    dflhc[pcols[0]].to_numpy().reshape((N1D, N1D)),
+    dflhc[pcols[1]].to_numpy().reshape((N1D, N1D)),
     dflhc["Cond_rf"].to_numpy().reshape((N1D, N1D)),
     vmin=vmin,
     vmax=vmax,
@@ -126,8 +165,8 @@ subfigs.colorbar(
 axs[0].set_title("Medlyn")
 axs[1].set_title("Random Forest")
 for i in range(2):
-    axs[i].set_xlabel("Photo")
+    axs[i].set_xlabel(pcols[0])
     if i == 0:
-        axs[i].set_ylabel("VPD")
+        axs[i].set_ylabel(pcols[1])
 fig.savefig("nonsmooth.png")
 plt.close()
